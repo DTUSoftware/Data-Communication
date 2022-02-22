@@ -3,8 +3,8 @@ import java.net.*;
 
 class crudeServer {
    public static void main(String argv[]) throws Exception {
-      System.out.println(" Server is Running  " );
       ServerSocket mysocket = new ServerSocket(5558);
+      System.out.println(" Server is Running  " );
 
       while (true) {
          Socket connectionSocket = mysocket.accept();
@@ -31,7 +31,7 @@ class crudeServer {
          int result=num1+num2;
          System.out.println("Addition operation done " );
 
-         writer.write("\r\n=== Result is  : "+result);
+         writer.write("=== Result is  : "+result);
          writer.flush();
          connectionSocket.close();
       }
