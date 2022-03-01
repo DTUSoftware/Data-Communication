@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Metadata -->
+        <meta name="description" content="">
+        <meta name="og:description" content="">
+        <title>DTU MailSender</title>
+        <meta name="author" content="DTU MailSender">
+        <meta property="og:site_name" content="DTU MailSender">
+        <meta name="theme-color" content="#db27d5">
+        <meta name="msapplication-TileColor" content="#db27d5">
+        <meta name="msapplication-TileImage" content="{{ url_for('static', filename='favicon-32x32.png') }}">
+        <meta property="og:title" content="DTU MailSender">
+        <meta property="og:url" content="{{ request.url }}">
+        <link rel="canonical" href="{{ request.url }}">
+
+        <!-- Favicons -->
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+        <!-- Bootstrap core CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+
+    <body class="text-center">
+        <div class="container-fluid d-flex h-100 p-3 mx-auto flex-column site-container">
+            <main role="main">
+                <p id="mailStatus"></p>
+                <h1>Send a mail!</h1>
+                <form id="mailForm">
+                    <div class="form-group">
+                        <label for="sender">Sender email address</label>
+                        <input type="email" class="form-control" id="sender" name="sender" placeholder="sender@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipient">Recipient email address</label>
+                        <input type="email" class="form-control" id="recipient" name="recipient" placeholder="recipient@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject">
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary mb-2">Send</button>
+                </form>
+            </main>
+        </div>
+
+
+        <!-- Bootstrap core JavaScript
+        ================================================== -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+        <!-- Forms -->
+        <script>
+            $('#mailForm').submit(function(e){
+                e.preventDefault();
+                $.ajax({
+                    url: "{{ url_for('send_route') }}",
+                    type: 'post',
+                    data:$('#mailForm').serialize(),
+                    success: function(data) {
+                        console.log(data);
+                        $('#mailStatus').text(data.message);
+                    },
+                    error: function(data) {
+                        console.log(data);
+                        $('#mailStatus').text(data.responseJSON.message);
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
