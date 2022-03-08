@@ -5,6 +5,61 @@ ADDRESS = os.environ.get("MAILSERVER_ADDRESS", "localhost")
 PORT = int(os.environ.get("MAILSERVER_PORT", "2525"))
 
 
+class MIMEContent:
+    content_type = "text/plain"
+    content_disposition = None
+    data = None
+
+    def __init__(self, content_type: str = None, content_disposition: str = None, data: str = None):
+        if content_type:
+            self.content_type = content_type
+        if content_disposition:
+            self.content_disposition = content_disposition
+        if data:
+            self.data = data
+
+    def set_data(self, data: str):
+        self.data = data
+
+    def get_output(self):
+        output = "Content-Type: " + self.content_type + "\n"
+
+        if self.content_disposition:
+            output = output + "Content-Disposition: " + self.content_disposition + "\n"
+        if self.data:
+            output = (output +
+                      "\n" +
+                      self.data + "\n")
+
+        return output
+
+
+class MIMEMessage:
+    version = "1.0"
+    boundary = "WhyDoesThisEvenExistHereIDKAskTomOrJerryPart5"
+    content = []
+
+    def __init__(self):
+        self.content.append(MIMEContent(content_type='multipart/mixed; boundary="' + self.boundary + '"'))
+
+    def add_content(self, content: MIMEContent):
+        self.content.append(content)
+
+    def add_body(self, text: str):
+        body = MIMEContent(data=text)
+        self.add_content(body)
+
+    def get_output(self):
+        output = "MIME-Version: " + self.version + "\n"
+
+        for part in self.content:
+            output = (output + part.get_output() +
+                      "\n" +
+                      "--" + self.boundary + "\n")
+
+        return output
+
+
 class Mail:
     def __init__(self, sender, recipient, subject, content):
         self.sender = sender
@@ -28,7 +83,7 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
         print(res)
         req = None
         if res.startswith("220"):
-            req = "HELO " + mail.sender.split("@")[1]
+            req = "EHLO " + mail.sender.split("@")[1]
         elif res.startswith("250"):
             if any(x in res.lower() for x in ["sender", "new message"]):
                 req = "RCPT TO: <" + mail.recipient + ">"
@@ -44,15 +99,17 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
         elif res.startswith("354"):
             header = str("From: " + mail.sender + "\n" +
                          "To: " + mail.recipient + "\n" +
-                         "Subject: " + mail.subject)
+                         "Subject: " + mail.subject + "\n")
+            mime_message = MIMEMessage()
             data = mail.content
             lines = data.split("\n")
             for i in range(len(lines)):
                 if lines[i].startswith("."):
                     lines[i] = "." + lines[i]  # prevent dot-stuffing
             data = "\n".join(lines)
+            mime_message.add_body(data)
 
-            socket.send((header+"\n\n"+data+"\n.\n").encode("UTF-8"))
+            req = header+mime_message.get_output()+"."
         elif res.startswith("500"):
             print("Command unrecognized.")
             break
