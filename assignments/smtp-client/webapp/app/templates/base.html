@@ -50,6 +50,10 @@
                         <label for="content">Content</label>
                         <textarea class="form-control" id="content" name="content" rows="3"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="image">Image</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*" size="10000000">
+                    </div>
                     <button type="submit" class="btn btn-primary mb-2">Send</button>
                 </form>
             </main>
@@ -67,18 +71,46 @@
         <script>
             $('#mailForm').submit(function(e){
                 e.preventDefault();
-                $.ajax({
-                    url: "{{ url_for('send_route') }}",
-                    type: 'post',
-                    data:$('#mailForm').serialize(),
-                    success: function(data) {
-                        console.log(data);
-                        $('#mailStatus').text(data.message);
-                    },
-                    error: function(data) {
-                        console.log(data);
-                        $('#mailStatus').text(data.responseJSON.message);
+                // console.log($('#mailForm'))
+                // console.log($('#mailForm').serialize())
+
+                var getFormData = new Promise((resolve, reject) => {
+                    var query = $('#mailForm').serialize();
+                    var files = $('#image')[0].files;
+                    if (files.length > 0) {
+                        var reader = new FileReader();
+                        reader.readAsDataURL(files[0]);
+                        reader.onload = function () {
+                            console.log(reader.result);
+                            query = query + "&file="+encodeURIComponent(reader.result);
+                            resolve(query);
+                        };
+                        reader.onerror = function (error) {
+                            console.log('Error: ', error);
+                            reject(query);
+                        };
                     }
+                    else {
+                        resolve(query);
+                    }
+                });
+
+                getFormData.then(formData => {
+                    console.log(formData);
+
+                    $.ajax({
+                        url: "{{ url_for('send_route') }}",
+                        type: 'post',
+                        data: formData,
+                        success: function(data) {
+                            console.log(data);
+                            $('#mailStatus').text(data.message);
+                        },
+                        error: function(data) {
+                            console.log(data);
+                            $('#mailStatus').text(data.responseJSON.message);
+                        }
+                    });
                 });
             });
         </script>

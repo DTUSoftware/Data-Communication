@@ -8,17 +8,14 @@ BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890
 
 
 class MIMEContent:
-    content_type = "text/plain"
-    content_disposition = None
-    data = None
+    def __init__(self, content_type: str = None, content_disposition: str = None, content_transfer_encoding: str = None, data: str = None):
+        self.content_type = "text/plain"
 
-    def __init__(self, content_type: str = None, content_disposition: str = None, data: str = None):
         if content_type:
             self.content_type = content_type
-        if content_disposition:
-            self.content_disposition = content_disposition
-        if data:
-            self.data = data
+        self.content_disposition = content_disposition
+        self.content_transfer_encoding = content_transfer_encoding
+        self.data = data
 
     def set_data(self, data: str):
         self.data = data
@@ -26,6 +23,8 @@ class MIMEContent:
     def get_output(self):
         output = "Content-Type: " + self.content_type + "\n"
 
+        if self.content_transfer_encoding:
+            output = output + "Content-Transfer-Encoding: " + self.content_transfer_encoding + "\n"
         if self.content_disposition:
             output = output + "Content-Disposition: " + self.content_disposition + "\n"
         if self.data:
@@ -38,11 +37,10 @@ class MIMEContent:
 
 class MIMEMessage:
     version = "1.0"
-    boundary = "VALIDBOUNDARY"
-    content = []
 
     def __init__(self):
-        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(60)])
+        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(random.randint(40,60))])
+        self.content = []
         self.content.append(MIMEContent(content_type='multipart/mixed; boundary="' + self.boundary + '"'))
 
     def add_content(self, content: MIMEContent):
@@ -63,12 +61,31 @@ class MIMEMessage:
         return output
 
 
+class File:
+    def __init__(self, input):
+        split = input.split(",")
+        metadata = split[0]
+        data = ",".join(split[1:])
+        self.metadata = metadata
+        self.data = data
+
+    def get_mime_content(self):
+        filetype = self.metadata.split(":")[1].split(";")[0]
+        fileending = filetype.split("/")[1]
+        content_type = "application/octet-stream; name=file." + fileending
+        content_transfer_encoding = self.metadata.split(";")[1]
+        content_disposition = 'attachment; filename="file.' + fileending + '"'
+        return MIMEContent(content_type, content_transfer_encoding=content_transfer_encoding,
+                           content_disposition=content_disposition, data=self.data)
+
+
 class Mail:
-    def __init__(self, sender, recipient, subject, content):
+    def __init__(self, sender, recipient, subject, content, file=None):
         self.sender = sender
         self.recipient = recipient
         self.subject = subject
         self.content = content
+        self.file = File(file)
 
     def send(self, socket: _socket.socket = None, close_socket: bool = True):
         send_mail(self, socket, close_socket)
@@ -112,6 +129,8 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
             data = "\n".join(lines)
             mime_message.add_body(data)
 
+            mime_message.add_content(mail.file.get_mime_content())
+
             req = header+mime_message.get_output()+"."
         elif res.startswith("500"):
             print("Command unrecognized.")
@@ -127,17 +146,17 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
 
         if req:
             req = req + "\n"
-            print(f"Sending: {req.encode('UTF-8')}")
+            print(f"Sending: {(req[:200] + '...') if len(req) > 200 else req}")
             socket.sendall(req.encode("UTF-8"))
 
     if close_socket:
         socket.close()
 
 
-def send_mail_raw(sender, recipient, subject, content):
+def send_mail_raw(sender, recipient, subject, content, file=None):
     with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as socket:
         socket.connect((ADDRESS, PORT))
-        mail = Mail(sender, recipient, subject, content)
+        mail = Mail(sender, recipient, subject, content, file)
         mail.send(socket)
         return 200
 

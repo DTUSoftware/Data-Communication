@@ -19,8 +19,8 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 # Functions #
 
 # Send a mail
-def send_mail(sender, recipient, subject, content):
-    status = smtp.send_mail_raw(sender, recipient, subject, content)
+def send_mail(sender, recipient, subject, content, file = None):
+    status = smtp.send_mail_raw(sender, recipient, subject, content, file)
     message = "None"
     if status == 200:
         message = "Mail sent successfully!"
@@ -46,8 +46,11 @@ def favicon():
 @app.route("/api/send", methods=["POST"])
 def send_route():
     use_json = request.args.get("json", default=False, type=lambda v: v.lower() == 'true')
+    file = None
     if use_json:
         content = request.json
+
+        print(content)
 
         if "sender" not in content or not content["sender"]:
             return Response(json.dumps({"status": 400, "message": "No sender."}), status=400,
@@ -62,12 +65,17 @@ def send_route():
             return Response(json.dumps({"status": 400, "message": "No content."}), status=400,
                             mimetype='application/json')
 
+        if "file" in content and content["file"]:
+            file = content["file"]
+
         # get fields
         sender = content["sender"]
         recipient = content["recipient"]
         subject = content["subject"]
         content = content["content"]
     else:
+        print(request.form)
+
         if "sender" not in request.form or not request.form["sender"]:
             return Response(json.dumps({"status": 400, "message": "No sender."}), status=400,
                             mimetype='application/json')
@@ -81,12 +89,16 @@ def send_route():
             return Response(json.dumps({"status": 400, "message": "No content."}), status=400,
                             mimetype='application/json')
 
+        if "file" in request.form and request.form["file"]:
+            file = request.form["file"]
+
+
         sender = request.form["sender"]
         recipient = request.form["recipient"]
         subject = request.form["subject"]
         content = request.form["content"]
 
-    status = send_mail(sender, recipient, subject, content)
+    status = send_mail(sender, recipient, subject, content, file)
 
     return Response(json.dumps({"status": status["status"], "message": status["message"]}), status=status["status"],
                     mimetype='application/json')
