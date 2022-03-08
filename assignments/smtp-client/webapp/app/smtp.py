@@ -1,8 +1,10 @@
 import os
+import random
 import socket as _socket
 
 ADDRESS = os.environ.get("MAILSERVER_ADDRESS", "localhost")
 PORT = int(os.environ.get("MAILSERVER_PORT", "2525"))
+BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'()+_,-./:=?"
 
 
 class MIMEContent:
@@ -36,10 +38,11 @@ class MIMEContent:
 
 class MIMEMessage:
     version = "1.0"
-    boundary = "WhyDoesThisEvenExistHereIDKAskTomOrJerryPart5"
+    boundary = "VALIDBOUNDARY"
     content = []
 
     def __init__(self):
+        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(60)])
         self.content.append(MIMEContent(content_type='multipart/mixed; boundary="' + self.boundary + '"'))
 
     def add_content(self, content: MIMEContent):
