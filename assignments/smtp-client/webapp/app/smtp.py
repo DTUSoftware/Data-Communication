@@ -62,12 +62,18 @@ class MIMEMessage:
 
 
 class File:
-    def __init__(self, input):
-        split = input.split(",")
-        metadata = split[0]
-        data = ",".join(split[1:])
-        self.metadata = metadata
-        self.data = data
+    def __init__(self, input=None):
+        if input:
+            split = input.split(",")
+            metadata = split[0]
+            data = ",".join(split[1:])
+            self.metadata = metadata
+            self.data = data
+    
+    def __new__(cls, *args, **kwargs):
+        if "input" in kwargs and kwargs["input"]:
+            return super().__new__(cls)
+            
 
     def get_mime_content(self):
         filetype = self.metadata.split(":")[1].split(";")[0]
@@ -95,6 +101,7 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
     if not socket:
         socket = _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM)
         socket.connect((ADDRESS, PORT))
+    mime_supported = True
     while True:
         res = b''
         res = socket.recv(1024)
@@ -120,21 +127,29 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
             header = str("From: " + mail.sender + "\n" +
                          "To: " + mail.recipient + "\n" +
                          "Subject: " + mail.subject + "\n")
-            mime_message = MIMEMessage()
             data = mail.content
             lines = data.split("\n")
             for i in range(len(lines)):
                 if lines[i].startswith("."):
                     lines[i] = "." + lines[i]  # prevent dot-stuffing
             data = "\n".join(lines)
-            mime_message.add_body(data)
+            if mime_supported:
+                mime_message = MIMEMessage()
+                mime_message.add_body(data)
 
-            mime_message.add_content(mail.file.get_mime_content())
+                if mail.file:
+                    mime_message.add_content(mail.file.get_mime_content())
 
-            req = header+mime_message.get_output()+"."
+                req = header+mime_message.get_output()+"."
+            else:
+                req = header+"\n"+data+"\n."
         elif res.startswith("500"):
             print("Command unrecognized.")
-            break
+            if "EHLO" in res:
+                mime_supported = False
+                req = "HELO " + mail.sender.split("@")[1]
+            else:
+                break
         elif res.startswith("503"):
             print("An error occured.")
             break
