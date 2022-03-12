@@ -1,14 +1,16 @@
 import os
 import random
 import socket as _socket
+import ssl
 
 ADDRESS = os.environ.get("MAILSERVER_ADDRESS", "localhost")
-PORT = int(os.environ.get("MAILSERVER_PORT", "2525"))
+PORT = int(os.environ.get("MAILSERVER_PORT", "587"))
 BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'()+_,-./:=?"
 
 
 class MIMEContent:
-    def __init__(self, content_type: str = None, content_disposition: str = None, content_transfer_encoding: str = None, data: str = None):
+    def __init__(self, content_type: str = None, content_disposition: str = None, content_transfer_encoding: str = None,
+                 data: str = None):
         self.content_type = "text/plain"
 
         if content_type:
@@ -39,7 +41,7 @@ class MIMEMessage:
     version = "1.0"
 
     def __init__(self):
-        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(random.randint(40,60))])
+        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(random.randint(40, 60))])
         self.content = []
         self.content.append(MIMEContent(content_type='multipart/mixed; boundary="' + self.boundary + '"'))
 
@@ -69,11 +71,10 @@ class File:
             data = ",".join(split[1:])
             self.metadata = metadata
             self.data = data
-    
+
     def __new__(cls, *args, **kwargs):
         if "input" in kwargs and kwargs["input"]:
             return super().__new__(cls)
-            
 
     def get_mime_content(self):
         filetype = self.metadata.split(":")[1].split(";")[0]
@@ -140,9 +141,9 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
                 if mail.file:
                     mime_message.add_content(mail.file.get_mime_content())
 
-                req = header+mime_message.get_output()+"."
+                req = header + mime_message.get_output() + "."
             else:
-                req = header+"\n"+data+"\n."
+                req = header + "\n" + data + "\n."
         elif res.startswith("500"):
             print("Command unrecognized.")
             if "EHLO" in res:
@@ -171,7 +172,12 @@ def send_mail(mail: Mail, socket: _socket.socket = None, close_socket: bool = Tr
 def send_mail_raw(sender, recipient, subject, content, file=None):
     with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as socket:
         socket.connect((ADDRESS, PORT))
+        ehlo = "ehlo"
+        socket.send(ehlo.encode("UTF-8"))
+        starttls = "STARTTLS\r\n"
+        socket.send(starttls.encode("UTF-8"))
+        socket = ssl.wrap_socket(socket)
+        socket.send(ehlo.encode("UTF-8"))
         mail = Mail(sender, recipient, subject, content, file)
         mail.send(socket)
         return 200
-
