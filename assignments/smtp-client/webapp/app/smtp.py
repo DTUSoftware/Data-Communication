@@ -2,18 +2,24 @@ import os
 import random
 import socket
 import ssl
+import base64
 
 ADDRESS = os.environ.get("MAILSERVER_ADDRESS", "localhost")
 PORT = int(os.environ.get("MAILSERVER_PORT", "2525"))
 USE_SSL = True if os.environ.get("USE_SSL", "False").lower() == "true" else False
+USERNAME = base64.b64encode(os.environ.get("MAILSERVER_USERNAME", "admin").encode("UTF-8")).decode("UTF-8")
+PASSWORD = base64.b64encode(os.environ.get("MAILSERVER_PASSWORD", "password").encode("UTF-8")).decode("UTF-8")
 BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'()+_,-./:=?"
+
+print(USERNAME)
+print(PASSWORD)
 
 
 class Connection:
     def __init__(self):
         self.sock = None
         self.ssock = None
-        self.scontext = None
+        self.ctx = None
 
         self.open()
 
@@ -32,16 +38,31 @@ class Connection:
             print("SSL not enabled!")
             return
 
-        self.scontext = ssl.create_default_context()
-        try:
-            self.ssock = self.scontext.wrap_socket(self.sock, server_hostname=ADDRESS)
-        except ssl.SSLError as e:
-            print("Could not open connection over SSL: " + str(e))
-            self.close()
-            if "WRONG_VERSION_NUMBER" in str(e):
-                print("Turning SSL off and trying again!")
-                USE_SSL = False
-                self.open()
+        # initial EHLO/HELO
+        command = EHLO(ADDRESS)
+        res = command.send(self)
+        if res:
+            print("EHLO accepted")
+
+            command = STARTTLS()
+            res = command.send(self)
+            if res:
+                print("STARTTLS accepted, wrapping socket")
+
+                self.ctx = ssl.create_default_context()
+                self.ctx.options |= (
+                        ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+                )
+                self.ctx.options |= ssl.OP_NO_COMPRESSION
+                try:
+                    self.ssock = self.ctx.wrap_socket(self.sock, server_hostname=ADDRESS)
+                except ssl.SSLError as e:
+                    print("Could not open connection over SSL: " + str(e))
+                    self.close()
+                    if "WRONG_VERSION_NUMBER" in str(e):
+                        print("Turning SSL off and trying again!")
+                        USE_SSL = False
+                        self.open()
 
     def open(self):
         if self.is_open():
@@ -113,9 +134,9 @@ class Command:
 
     def send(self, conn: Connection):
         if self.content:
-            self.reply_code = conn.send(" ".join([self.command, self.content]) + "\n")
+            self.reply_code = conn.send(" ".join([self.command, self.content]) + "\r\n")
         else:
-            self.reply_code = conn.send(self.command + "\n")
+            self.reply_code = conn.send(self.command + "\r\n")
         if self.success(self.reply_code):
             return True
         return False
@@ -199,7 +220,8 @@ class DATA(Command):
         # Send initial start
         if super().send(conn):
             # Send data
-            self.command = self.data + "\n."
+            self.command = self.data + "\r\n."
+            print(self.command)
             self.reply_codes = self.reply_codes_2
             return super().send(conn)
 
@@ -212,6 +234,41 @@ class QUIT(Command):
 
     def __init__(self):
         super().__init__("QUIT", self.reply_codes)
+
+
+class STARTTLS(Command):
+    reply_codes = {
+        "success": [220],
+        "error": [500]
+    }
+
+    def __init__(self):
+        super().__init__("STARTTLS", self.reply_codes)
+
+
+class AUTH(Command):
+    reply_codes = {
+        "success": [220, 334, 235],
+        "error": [500]
+    }
+
+    def __init__(self, username, password):
+        super().__init__("AUTH LOGIN", self.reply_codes)
+        self.username = username
+        self.password = password
+
+    def send(self, conn: Connection):
+        # Send initial part
+        if super().send(conn):
+            # Send username
+            self.command = self.username
+            if super().send(conn):
+                # Send password
+                self.command = self.password
+                return super().send(conn)
+        if self.success(self.reply_code):
+            return True
+        return False
 
 
 class MIMEContent:
@@ -246,7 +303,7 @@ class MIMEMessage:
     version = "1.0"
 
     def __init__(self):
-        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(random.randint(40,60))])
+        self.boundary = "".join([random.choice(BOUNDARY_CHARS) for x in range(random.randint(40, 60))])
         self.content = []
         self.content.append(MIMEContent(content_type='multipart/mixed; boundary="' + self.boundary + '"'))
 
@@ -260,6 +317,9 @@ class MIMEMessage:
     def get_output(self):
         output = "MIME-Version: " + self.version + "\n"
 
+        # parts = ("\n--" + self.boundary + "\n").join([part.get_output() for part in self.content])
+        # print(parts)
+        # output = output + parts
         for part in self.content:
             output = (output + part.get_output() +
                       "\n" +
@@ -314,6 +374,13 @@ class Mail:
             else:
                 return command.reply_code
 
+        # --- AUTH if Secure (TLS or SSL) --- #
+        if USE_SSL:
+            command = AUTH(USERNAME, PASSWORD)
+            success = command.send(conn)
+            if not success:
+                return command.reply_code
+
         # ----- MAIL From ---- #
         command = MAIL(self.sender)
         success = command.send(conn)
@@ -337,9 +404,9 @@ class Mail:
             if self.file:
                 mime_message.add_content(self.file.get_mime_content())
 
-            data = header + mime_message.get_output() + "."
+            data = header + mime_message.get_output()
         else:
-            data = header + "\n" + self.content + "\n."
+            data = header + "\n" + self.content
         command = DATA(data)
         success = command.send(conn)
         if not success:

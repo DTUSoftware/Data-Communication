@@ -19,9 +19,9 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 # Functions #
 
 # Send a mail
-def send_mail(sender, recipient, subject, content, file = None):
+def send_mail(sender, recipient, subject, content, file=None):
     status = smtp.send_mail_raw(sender, recipient, subject, content, file)
-    message = "None"
+    message = f"{status}: Error, check logs."
     if status == 200:
         message = "Mail sent successfully!"
     return {"status": status, "message": message}
