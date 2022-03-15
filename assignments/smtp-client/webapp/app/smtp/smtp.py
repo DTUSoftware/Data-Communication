@@ -44,10 +44,13 @@ class Connection:
             if res:
                 print("STARTTLS accepted, wrapping socket")
 
+                # create a default context, to try and find the highest standard of safety for the socket
                 self.ctx = ssl.create_default_context()
+                # disable insecure/older versions, we want dat TLS
                 self.ctx.options |= (
                         ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
                 )
+                # no compression
                 self.ctx.options |= ssl.OP_NO_COMPRESSION
                 try:
                     self.ssock = self.ctx.wrap_socket(self.sock, server_hostname=ADDRESS)
