@@ -34,13 +34,11 @@ class Connection:
             return
 
         # initial EHLO/HELO
-        command = EHLO(ADDRESS)
-        res = command.send(self)
+        res = self.ehlo(ADDRESS)
         if res:
             print("EHLO accepted")
 
-            command = STARTTLS()
-            res = command.send(self)
+            res = self.starttls()
             if res:
                 print("STARTTLS accepted, wrapping socket")
 
@@ -85,10 +83,9 @@ class Connection:
     def close(self):
         try:
             if self.is_open():
-                command = QUIT()
-                success = command.send(self)
+                success = self.quit()
                 if not success:
-                    print("Server did not want to close connection - closing on our end anyway - " + str(command.reply_code))
+                    print("Server did not want to close connection - closing on our end anyway")
         except Exception as e:
             print("Error while trying to close connection - closing on our end anyway - " + str(e))
 
