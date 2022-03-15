@@ -5,6 +5,7 @@ from email import encoders
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
+import smtp as smtp
 
 
 class MailGui(QMainWindow):
@@ -34,6 +35,7 @@ class MailGui(QMainWindow):
             self.to.setEnabled(True)
             self.subject.setEnabled(True)
             self.text.setEnabled(True)
+            self.fromadress.setEnabled(True)
             self.pushButton_2.setEnabled(True)
             self.pushButton_3.setEnabled(True)
         except:
@@ -51,20 +53,20 @@ class MailGui(QMainWindow):
         confirmsend.addButton(QPushButton("No"), QMessageBox.NoRole)
 
         if confirmsend.exec_() == 0:
-
-            self.msg['From'] = "HEJHEJHEJ"
-            self.msg['To'] = self.to.text()
-            self.msg['Subject'] = self.subject.text()
-            self.msg.attach(MIMEText(self.textEdit.toPlainText(), 'plain'))
-            text = self.msg.as_string()
-            self.server.sendmail(self.emailadress.text(), self.to.text(), text)
-            confirmed = QMessageBox()
-            confirmed.setText("Mail sent :)")
-            confirmed.exec()
-#            except:
-#                errormessage = QMessageBox()
-#                errormessage.setText("Sending the mail failed")
-#                errormessage.exec()
+            try:
+                self.msg['From'] = "HEJHEJHEJ"
+                self.msg['To'] = self.to.text()
+                self.msg['Subject'] = self.subject.text()
+                self.msg.attach(MIMEText(self.textEdit.toPlainText(), 'plain'))
+                text = self.msg.as_string()
+                self.server.sendmail(self.emailadress.text(), self.to.text(), text)
+                confirmed = QMessageBox()
+                confirmed.setText("Mail sent :)")
+                confirmed.exec()
+            except:
+                errormessage = QMessageBox()
+                errormessage.setText("Sending the mail failed")
+                errormessage.exec()
 
 
 def main():

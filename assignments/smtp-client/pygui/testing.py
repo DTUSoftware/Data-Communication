@@ -7,7 +7,7 @@ clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((mailserver, port))
 recv = clientSocket.recv(1024)
 print(recv)
-if recv[:3] != '220':
+if "220" in str(recv):
     print('220 reply not received from server.')
 
 # Send HELO command and print server response

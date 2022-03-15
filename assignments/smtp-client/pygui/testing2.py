@@ -35,12 +35,14 @@ with socket(AF_INET, SOCK_STREAM) as clientSocket:
     send_smtp_command("starttls", clientSocket)
     print_response(clientSocket)
     # wrappedClientSocket = socket
-    wrappedClientSocket = ssl.wrap_socket(clientSocket, ssl_version=ssl.PROTOCOL_SSLv23)
+    ctx = ssl.create_default_context()
+    wrappedClientSocket = ctx.wrap_socket(clientSocket, server_hostname=mailserver)
     send_smtp_command("ehlo google", wrappedClientSocket)
     print_response(wrappedClientSocket)
     send_smtp_command("auth login", wrappedClientSocket)
     print_response(wrappedClientSocket)
     wrappedClientSocket.send(b"c210cHRlc3Rzb2Z0d2FyZTY5QGdtYWlsLmNvbQ==\r\n")
+    print_response(wrappedClientSocket)
     wrappedClientSocket.send(b"UGxlYXNlV29yazY5\r\n")
     print_response(wrappedClientSocket)
 
