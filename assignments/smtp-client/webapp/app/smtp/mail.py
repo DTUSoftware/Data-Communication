@@ -108,7 +108,7 @@ class Mail:
 
         # --- AUTH if Secure (TLS or SSL) --- #
         if smtp.USE_SSL:
-            success, reply_code = conn.auth(username, password)
+            success, reply_code = conn.auth(smtp.USERNAME, smtp.PASSWORD)
             if not success:
                 return reply_code
 
