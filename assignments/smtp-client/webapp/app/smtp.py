@@ -118,6 +118,30 @@ class Connection:
         self.get_current_socket().sendall(req)
         return self.get_response()
 
+    def ehlo(self, domain):
+        return EHLO(domain).send(self)
+
+    def helo(self, domain):
+        return HELO(domain).send(self)
+
+    def mail(self, reverse_path):
+        return MAIL(reverse_path).send(self)
+
+    def rcpt(self, forward_path):
+        return RCPT(forward_path).send(self)
+
+    def data(self, data):
+        return DATA(data).send(self)
+
+    def quit(self):
+        return QUIT().send(self)
+
+    def starttls(self):
+        return STARTTLS().send(self)
+
+    def auth(self, username, password):
+        return AUTH(username, password).send(self)
+
 
 class Command:
     def __init__(self, command: str, reply_codes: dict, content=None):
@@ -177,7 +201,7 @@ class MAIL(Command):
         "error": [500, 501, 421]
     }
 
-    def __init__(self, reverse_path=None):
+    def __init__(self, reverse_path):
         super().__init__("MAIL", self.reply_codes)
         super().set_content(f"FROM:<{reverse_path}>")
 
@@ -189,7 +213,7 @@ class RCPT(Command):
         "error": [500, 501, 503, 421]
     }
 
-    def __init__(self, forward_path=None):
+    def __init__(self, forward_path):
         super().__init__("RCPT", self.reply_codes)
         super().set_content(f"TO:<{forward_path}>")
 
