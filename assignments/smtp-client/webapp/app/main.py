@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Flask, request, send_from_directory, render_template, Response
-import smtp
+from smtp import mail
 
 try:
     import config
@@ -20,7 +20,7 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 
 # Send a mail
 def send_mail(sender, recipient, subject, content, file=None):
-    status = smtp.send_mail_raw(sender, recipient, subject, content, file)
+    status = mail.send_mail_raw(sender, recipient, subject, content, file)
     message = f"{status}: Error, check logs."
     if status == 200:
         message = "Mail sent successfully!"
