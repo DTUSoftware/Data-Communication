@@ -96,31 +96,31 @@ class Mail:
     def send(self, conn, close_connection: bool = True):
         # ----- Hello and check for MIME support ---- #
         mime_supported = True
-        success = conn.ehlo(domain=self.sender.split("@")[1])
+        success, reply_code = conn.ehlo(domain=self.sender.split("@")[1])
         if not success:
-            if command.reply_code == 500:
+            if reply_code == 500:
                 mime_supported = False
                 success = conn.helo(domain=self.sender.split("@")[1])
                 if not success:
-                    return command.reply_code
+                    return reply_code
             else:
-                return command.reply_code
+                return reply_code
 
         # --- AUTH if Secure (TLS or SSL) --- #
         if smtp.USE_SSL:
-            success = conn.auth(username, password)
+            success, reply_code = conn.auth(username, password)
             if not success:
-                return command.reply_code
+                return reply_code
 
         # ----- MAIL From ---- #
-        success = conn.mail(self.sender)
+        success, reply_code = conn.mail(self.sender)
         if not success:
-            return command.reply_code
+            return reply_code
 
         # ----- RCPT To ---- #
-        success = conn.rcpt(self.recipient)
+        success, reply_code = conn.rcpt(self.recipient)
         if not success:
-            return command.reply_code
+            return reply_code
 
         # ----- DATA ---- #
         header = str("From: " + self.sender + "\n" +
@@ -136,9 +136,9 @@ class Mail:
             data = header + mime_message.get_output()
         else:
             data = header + "\n" + self.content
-        success = conn.data(data)
+        success, reply_code = conn.data(data)
         if not success:
-            return command.reply_code
+            return reply_code
 
         if close_connection:
             conn.close()

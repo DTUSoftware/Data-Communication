@@ -117,28 +117,44 @@ class Connection:
         return self.get_response()
 
     def ehlo(self, domain):
-        return EHLO(domain).send(self)
+        command = EHLO(domain)
+        res = command.send(self)
+        return res, command.reply_code
 
     def helo(self, domain):
-        return HELO(domain).send(self)
+        command = HELO(domain)
+        res = command.send(self)
+        return res, command.reply_code
 
     def mail(self, reverse_path):
-        return MAIL(reverse_path).send(self)
+        command = MAIL(reverse_path)
+        res = command.send(self)
+        return res, command.reply_code
 
     def rcpt(self, forward_path):
-        return RCPT(forward_path).send(self)
+        command = RCPT(forward_path)
+        res = command.send(self)
+        return res, command.reply_code
 
     def data(self, data):
-        return DATA(data).send(self)
+        command = DATA(data)
+        res = command.send(self)
+        return res, command.reply_code
 
     def quit(self):
-        return QUIT().send(self)
+        command = QUIT()
+        res = command.send(self)
+        return res, command.reply_code
 
     def starttls(self):
-        return STARTTLS().send(self)
+        command = STARTTLS()
+        res = command.send(self)
+        return res, command.reply_code
 
     def auth(self, username, password):
-        return AUTH(username, password).send(self)
+        command = AUTH(username, password)
+        res = command.send(self)
+        return res, command.reply_code
 
 
 class Command:
