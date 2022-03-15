@@ -29,34 +29,40 @@
     </head>
 
     <body class="text-center">
-        <div class="container-fluid d-flex h-100 p-3 mx-auto flex-column site-container">
-            <main role="main">
-                <p id="mailStatus"></p>
-                <h1>Send a mail!</h1>
-                <form id="mailForm">
-                    <div class="form-group">
-                        <label for="sender">Sender email address</label>
-                        <input type="email" class="form-control" id="sender" name="sender" placeholder="sender@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="recipient">Recipient email address</label>
-                        <input type="email" class="form-control" id="recipient" name="recipient" placeholder="recipient@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="subject">Subject</label>
-                        <input type="text" class="form-control" id="subject" name="subject">
-                    </div>
-                    <div class="form-group">
-                        <label for="content">Content</label>
-                        <textarea class="form-control" id="content" name="content" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="image">Image</label>
-                        <input type="file" class="form-control" id="image" name="image" accept="image/*" size="10000000">
-                    </div>
-                    <button type="submit" class="btn btn-primary mb-2">Send</button>
-                </form>
-            </main>
+        <div class="container d-flex h-100 p-3 mx-auto flex-column site-container">
+            <div class="row">
+                <div class="col-md-12">
+                    <p id="mailStatus"></p>
+                    <h1>Send a mail!</h1>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <form id="mailForm">
+                        <div class="form-group">
+                            <label for="sender">Sender email address</label>
+                            <input type="email" class="form-control" id="sender" name="sender" placeholder="sender@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient">Recipient email address</label>
+                            <input type="email" class="form-control" id="recipient" name="recipient" placeholder="recipient@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject">
+                        </div>
+                        <div class="form-group">
+                            <label for="content">Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="image">Image</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*" size="10000000">
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-2">Send</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
 
