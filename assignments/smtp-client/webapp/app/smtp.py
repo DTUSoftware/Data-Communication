@@ -11,9 +11,6 @@ USERNAME = base64.b64encode(os.environ.get("MAILSERVER_USERNAME", "admin").encod
 PASSWORD = base64.b64encode(os.environ.get("MAILSERVER_PASSWORD", "password").encode("UTF-8")).decode("UTF-8")
 BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'()+_,-./:=?"
 
-print(USERNAME)
-print(PASSWORD)
-
 
 class Connection:
     def __init__(self):
@@ -272,7 +269,8 @@ class AUTH(Command):
 
 
 class MIMEContent:
-    def __init__(self, content_type: str = None, content_disposition: str = None, content_transfer_encoding: str = None, data: str = None):
+    def __init__(self, content_type: str = None, content_disposition: str = None, content_transfer_encoding: str = None,
+                 data: str = None):
         self.content_type = "text/plain"
 
         if content_type:
@@ -336,7 +334,7 @@ class File:
             data = ",".join(split[1:])
             self.metadata = metadata
             self.data = data
-    
+
     def __new__(cls, *args, **kwargs):
         if "input" in kwargs and kwargs["input"]:
             return super().__new__(cls)
