@@ -132,10 +132,7 @@ class Mail:
             mime_message = MIMEMessage()
             mime_message.add_body(self.content)
 
-            print("do we have a file")
-
             if self.file:
-                print("we have a file")
                 mime_message.add_content(self.file.get_mime_content())
 
             data = header + mime_message.get_output()
@@ -153,6 +150,5 @@ class Mail:
 
 def send_mail_raw(sender, recipient, subject, content, file=None):
     conn = smtp.Connection()
-    print("file: " + file)
     mail = Mail(sender, recipient, subject, content, file)
     return mail.send(conn, close_connection=True)
