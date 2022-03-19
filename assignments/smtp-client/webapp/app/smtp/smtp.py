@@ -4,7 +4,7 @@ import ssl
 import base64
 
 ADDRESS = os.environ.get("MAILSERVER_ADDRESS", "localhost")
-PORT = int(os.environ.get("MAILSERVER_PORT", "2525"))
+PORT = int(os.environ.get("MAILSERVER_PORT", "25"))
 USE_SSL = True if os.environ.get("USE_SSL", "False").lower() == "true" else False
 USERNAME = base64.b64encode(os.environ.get("MAILSERVER_USERNAME", "admin").encode("UTF-8")).decode("UTF-8")
 PASSWORD = base64.b64encode(os.environ.get("MAILSERVER_PASSWORD", "password").encode("UTF-8")).decode("UTF-8")
