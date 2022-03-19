@@ -1,4 +1,4 @@
-import smtp
+from smtp import smtp
 import random
 
 BOUNDARY_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'()+_,-./:=?"
@@ -74,6 +74,8 @@ class File:
     def __new__(cls, *args, **kwargs):
         if "input" in kwargs and kwargs["input"]:
             return super().__new__(cls)
+        if args:
+            return super().__new__(cls)
 
     def get_mime_content(self):
         filetype = self.metadata.split(":")[1].split(";")[0]
@@ -91,7 +93,7 @@ class Mail:
         self.recipient = recipient
         self.subject = subject
         self.content = content
-        self.file = File(file)
+        self.file = File(input=file)
 
     def send(self, conn, close_connection: bool = True):
         # ----- Hello and check for MIME support ---- #
@@ -130,7 +132,10 @@ class Mail:
             mime_message = MIMEMessage()
             mime_message.add_body(self.content)
 
+            print("do we have a file")
+
             if self.file:
+                print("we have a file")
                 mime_message.add_content(self.file.get_mime_content())
 
             data = header + mime_message.get_output()
@@ -148,5 +153,6 @@ class Mail:
 
 def send_mail_raw(sender, recipient, subject, content, file=None):
     conn = smtp.Connection()
+    print("file: " + file)
     mail = Mail(sender, recipient, subject, content, file)
     return mail.send(conn, close_connection=True)
