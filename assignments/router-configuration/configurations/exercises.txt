@@ -1,0 +1,5 @@
+IP v4 address: 192.168.88.253
+Default gateway: 192.168.88.1
+DHCP server: 192.168.88.1
+Subnet mask: 255.255.255.0
+DNS servers: 192.168.88.1
