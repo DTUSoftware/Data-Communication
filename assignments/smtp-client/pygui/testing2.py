@@ -5,10 +5,7 @@ import ssl
 # mailserver and port
 mailserver = 'smtp.gmail.com'
 port = 587
-username = "smtptestsoftware69@gmail.com"
-password = "PleaseWork69"
-base64username = "c210cHRlc3Rzb2Z0d2FyZTY5QGdtYWlsLmNvbQ=="
-base64password = "UGxlYXNlV29yazY5"
+
 
 
 def send_smtp_command(command: str, socket: socket):

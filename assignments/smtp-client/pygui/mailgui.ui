@@ -192,7 +192,7 @@
      <string>Text:</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="text">
+   <widget class="QTextEdit" name="text123">
     <property name="enabled">
      <bool>false</bool>
     </property>
@@ -263,7 +263,7 @@
      <string>Send</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="from">
+   <widget class="QLineEdit" name="fromadress">
     <property name="enabled">
      <bool>false</bool>
     </property>

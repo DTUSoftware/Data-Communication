@@ -1,11 +1,8 @@
+import traceback
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
-import smtplib
-from email import encoders
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-import smtp as smtp
+from smtp import smtp, mail
+import base64
 
 
 class MailGui(QMainWindow):
@@ -20,11 +17,15 @@ class MailGui(QMainWindow):
 
     def login(self):
         try:
-            self.server = smtplib.SMTP(self.smtpserver.text(), self.portnr.text())
-            self.server.ehlo()
-            self.server.starttls()
-            self.server.ehlo()
-            self.server.login(self.emailadress.text(), self.password.text())
+            smtp.ADDRESS = self.smtpserver.text()
+            smtp.PORT = int(self.portnr.text())
+            smtp.USE_SSL = True
+            self.conn = smtp.Connection()
+            self.conn.ehlo(self.smtpserver.text())
+            self.conn.starttls()
+            self.conn.ehlo(self.smtpserver.text())
+            self.conn.auth(base64.b64encode(self.emailadress.text().encode("UTF-8")).decode("UTF-8"),
+                           base64.b64encode(self.password.text().encode("UTF-8")).decode("UTF-8"))
 
             self.smtpserver.setEnabled(False)
             self.portnr.setEnabled(False)
@@ -34,11 +35,12 @@ class MailGui(QMainWindow):
 
             self.to.setEnabled(True)
             self.subject.setEnabled(True)
-            self.text.setEnabled(True)
+            self.text123.setEnabled(True)
             self.fromadress.setEnabled(True)
             self.pushButton_2.setEnabled(True)
             self.pushButton_3.setEnabled(True)
         except:
+            traceback.print_exc()
             errormessage = QMessageBox()
             errormessage.setText("Login Failed!")
             errormessage.exec()
@@ -54,16 +56,21 @@ class MailGui(QMainWindow):
 
         if confirmsend.exec_() == 0:
             try:
-                self.msg['From'] = "HEJHEJHEJ"
-                self.msg['To'] = self.to.text()
-                self.msg['Subject'] = self.subject.text()
-                self.msg.attach(MIMEText(self.textEdit.toPlainText(), 'plain'))
-                text = self.msg.as_string()
-                self.server.sendmail(self.emailadress.text(), self.to.text(), text)
+                self.conn.mail(self.fromadress.text())
+                self.conn.rcpt(self.to.text())
+                header = str("From: " + self.fromadress.text() + "\r\n" +
+                             "To: " + self.to.text() + "\r\n" +
+                             "Subject: " + self.subject.text() + "\r\n")
+
+                mimemessage = mail.MIMEMessage()
+                mimemessage.add_body(self.text123.toPlainText())
+
+                self.conn.data(header + mimemessage.get_output())
                 confirmed = QMessageBox()
                 confirmed.setText("Mail sent :)")
                 confirmed.exec()
             except:
+                traceback.print_exc()
                 errormessage = QMessageBox()
                 errormessage.setText("Sending the mail failed")
                 errormessage.exec()
