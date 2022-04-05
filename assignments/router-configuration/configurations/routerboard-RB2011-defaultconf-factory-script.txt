@@ -1,0 +1,141 @@
+#| 
+#| WAN (gateway) Configuration:
+#|     gateway:	ether1  (renamed with extension '-gateway');
+#|     firewall: 	enabled;
+#|     NAT:		enabled;
+#|     DHCP Client:	enabled;
+#| 
+#| LAN Configuration:
+#|     LAN Port:	bridge-local;
+#|     switch group:	ether6 (master), ether7, ether8, ether9, ether10
+#|          (renamed with extensions '-master-local' and '-slave-local')
+#|     LAN IP:		192.168.88.1;
+#|     DHCP Server:	enabled;
+
+:global action;
+
+#-------------------------------------------------------------------------------
+# Apply configuration.
+# these commands are executed after installation or configuration reset
+#-------------------------------------------------------------------------------
+:if ($action = "apply") do={
+# wait for interfaces
+:while ([/interface ethernet find] = "") do={ :delay 1s; };
+
+	/interface set ether1 name="ether1-gateway";
+		/ip dhcp-client add interface=ether1-gateway disabled=no comment="default configuration";
+	/interface {
+		set ether6 name=ether6-master-local;
+		set ether7 name=ether7-slave-local;
+		set ether8 name=ether8-slave-local;
+		set ether9 name=ether9-slave-local;
+		set ether10 name=ether10-slave-local;
+	}
+	/interface ethernet {
+		set ether7-slave-local master-port=ether6-master-local;
+		set ether8-slave-local master-port=ether6-master-local;
+		set ether9-slave-local master-port=ether6-master-local;
+		set ether10-slave-local master-port=ether6-master-local;
+	}
+
+	/interface bridge
+		add name=bridge-local disabled=no auto-mac=no protocol-mode=rstp;
+	:local bMACIsSet 0;
+	:foreach k in=[/interface find] do={
+		:local tmpPortName [/interface get $k name];
+		:if (!($tmpPortName~"bridge"  || $tmpPortName~"ether1"|| $tmpPortName~"slave")) do={
+			:if ($bMACIsSet = 0) do={
+				:if ([/interface get $k type] = "ether") do={
+					/interface bridge set "bridge-local" admin-mac=[/interface ethernet get $tmpPortName mac-address];
+					:set bMACIsSet 1;
+				}
+			}
+			/interface bridge port
+				add bridge=bridge-local interface=$tmpPortName;
+		}
+	}
+	/ip address add address=192.168.88.1/24 interface=bridge-local comment="default configuration";
+		/ip pool add name="default-dhcp" ranges=192.168.88.10-192.168.88.254;
+		/ip dhcp-server
+			add name=default address-pool="default-dhcp" interface=bridge-local lease-time=10m disabled=no;
+		/ip dhcp-server network
+			add address=192.168.88.0/24 gateway=192.168.88.1 dns-server=192.168.88.1 comment="default configuration";
+ /ip dns {
+     set allow-remote-requests=yes
+     static add name=router address=192.168.88.1
+ }
+
+	/ip firewall nat add chain=srcnat out-interface=ether1-gateway action=masquerade comment="default configuration"
+	/ip firewall {
+		filter add chain=input action=accept protocol=icmp comment="default configuration"
+		filter add chain=input action=accept connection-state=established comment="default configuration"
+		filter add chain=input action=accept connection-state=related comment="default configuration"
+		filter add chain=input action=drop in-interface=ether1-gateway comment="default configuration"
+              filter add chain=forward action=accept connection-state=established comment="default configuration"
+              filter add chain=forward action=accept connection-state=related comment="default configuration"
+              filter add chain=forward action=drop connection-state=invalid comment="default configuration"
+	}
+	/tool mac-server disable [find];
+	/tool mac-server mac-winbox disable [find];
+	:foreach k in=[/interface find] do={
+		:local tmpName [/interface get $k name];
+		:if (!($tmpName~"ether1-gateway")) do={
+			/tool mac-server add interface=$tmpName disabled=no;
+			/tool mac-server mac-winbox add interface=$tmpName disabled=no;
+		}
+	}
+	/ip neighbor discovery set [find name="ether1-gateway"] discover=no
+}
+
+#-------------------------------------------------------------------------------
+# Revert configuration.
+# these commands are executed if user requests to remove default configuration
+#-------------------------------------------------------------------------------
+:if ($action = "revert") do={
+# remove wan port protection
+	/ip firewall {
+		:local o [nat find comment="default configuration"]
+		:if ([:len $o] != 0) do={ nat remove $o }
+		:local o [filter find comment="default configuration"]
+		:if ([:len $o] != 0) do={ filter remove $o }
+	}
+	/tool mac-server remove [find interface!=all]
+	/tool mac-server set [find] disabled=no
+	/tool mac-server mac-winbox remove [find interface!=all]
+	/tool mac-server mac-winbox set [find] disabled=no
+# reset wan ports;
+	/ip neighbor discovery set [find name="ether1-gateway"] discover=yes
+	/interface set "ether1-gateway" name=ether1;
+		:local o [/ip dhcp-server network find comment="default configuration"]
+		:if ([:len $o] != 0) do={ /ip dhcp-server network remove $o }
+		:local o [/ip dhcp-server find name="default" address-pool="default-dhcp" interface="bridge-local" !disabled]
+		:if ([:len $o] != 0) do={ /ip dhcp-server remove $o }
+		/ip pool {
+			:local o [find name="default-dhcp" ranges=192.168.88.10-192.168.88.254]
+			:if ([:len $o] != 0) do={ remove $o }
+		}
+		:local o [/ip dhcp-client find comment="default configuration"]
+		:if ([:len $o] != 0) do={ /ip dhcp-client remove $o }
+	/ip dns {
+		set allow-remote-requests=no
+		:local o [static find name=router address=192.168.88.1]
+		:if ([:len $o] != 0) do={ static remove $o }
+	}
+	/ip address {
+		:local o [find comment="default configuration"]
+		:if ([:len $o] != 0) do={ remove $o }
+	}
+# remove switch
+	/interface set ether6-master-local name=ether6;
+	/interface ethernet set ether7-slave-local master-port=none;
+	/interface set ether7-slave-local name=ether7;
+	/interface ethernet set ether8-slave-local master-port=none;
+	/interface set ether8-slave-local name=ether8;
+	/interface ethernet set ether9-slave-local master-port=none;
+	/interface set ether9-slave-local name=ether9;
+	/interface ethernet set ether10-slave-local master-port=none;
+	/interface set ether10-slave-local name=ether10;
+	/interface bridge port remove [find bridge="bridge-local"]
+	/interface bridge remove [find name="bridge-local"]
+}
+
