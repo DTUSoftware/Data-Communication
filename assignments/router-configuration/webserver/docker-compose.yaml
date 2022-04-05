@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  apache:
+    container_name: apache
+    hostname: apache
+    image: httpd
+    volumes:
+      - ./public-html:/usr/local/apache2/htdocs
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx:/etc/nginx
+      - ./ssl:/etc/ssl
+    depends_on:
+      - "apache"
