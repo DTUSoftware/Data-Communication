@@ -38,9 +38,9 @@ with socket(AF_INET, SOCK_STREAM) as clientSocket:
     print_response(wrappedClientSocket)
     send_smtp_command("auth login", wrappedClientSocket)
     print_response(wrappedClientSocket)
-    wrappedClientSocket.send(b"c210cHRlc3Rzb2Z0d2FyZTY5QGdtYWlsLmNvbQ==\r\n")
+    wrappedClientSocket.send(b"Userbane\r\n")
     print_response(wrappedClientSocket)
-    wrappedClientSocket.send(b"UGxlYXNlV29yazY5\r\n")
+    wrappedClientSocket.send(b"Password\r\n")
     print_response(wrappedClientSocket)
 
 # print(base64.b64encode(bytes(username, "utf-8")))

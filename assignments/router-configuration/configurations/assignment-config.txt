@@ -64,6 +64,8 @@ add action=dst-nat chain=dstnat dst-port=80 in-interface=ether1 protocol=tcp \
 set allow-disable-external-interface=no
 /system clock
 set time-zone-name=Europe/Copenhagen
+/system identity
+set name=Group20
 /system logging
 add disabled=yes prefix=192.168.20.50 topics=info
 /system ntp client
