@@ -1,4 +1,4 @@
-# apr/05/2022 18:04:44 by RouterOS 6.18
+# apr/19/2022 15:35:49 by RouterOS 6.18
 # software id = PLBF-NQ9T
 #
 /interface bridge
@@ -36,17 +36,26 @@ add address=192.168.20.1/24 interface=ether2 network=192.168.20.0
 /ip dhcp-client
 add dhcp-options=clientid,hostname disabled=no interface=ether1
 /ip dhcp-server lease
-add address=192.168.20.4 comment="Port 4 Static" mac-address=98:28:A6:06:29:B4 \
+add address=192.168.20.5 comment="Port 5 Static" mac-address=98:28:A6:06:29:B4 \
     server=server1
-add address=192.168.20.5 comment="Port 5 Static" mac-address=84:A9:3E:A2:41:5A \
-    server=server1
+add address=192.168.20.4 client-id=1:0:e0:4c:68:a:f comment="Port 4 Static" \
+    mac-address=00:E0:4C:68:0A:0F server=server1
 /ip dhcp-server network
 add address=192.168.20.0/24 dns-server=192.168.20.1 gateway=192.168.20.1
 /ip dns
 set allow-remote-requests=yes servers=1.1.1.1,8.8.8.8
 /ip firewall filter
 add chain=forward comment="Allow SSH" dst-port=22 protocol=tcp
+add chain=forward comment="Allow HTTPS" dst-port=443 protocol=tcp
+add chain=forward protocol=tcp src-port=443
 add chain=forward comment="Allow HTTP" dst-port=80 protocol=tcp
+add chain=forward protocol=tcp src-port=80
+add chain=forward comment="Allow DNS" dst-port=53 protocol=udp
+add chain=forward comment="Allow NTP" dst-port=123 protocol=udp
+add chain=forward comment="Allow DHCP" dst-port=67 protocol=udp
+add chain=forward comment="Allow pinging" protocol=icmp
+add action=reject chain=forward comment="Deny everything else" reject-with=\
+    icmp-port-unreachable
 /ip firewall nat
 add action=masquerade chain=srcnat out-interface=ether1
 add action=dst-nat chain=dstnat dst-port=80 in-interface=ether1 protocol=tcp \
