@@ -63,7 +63,5 @@ set allow-disable-external-interface=no
 set time-zone-name=Europe/Copenhagen
 /system identity
 set name=Group20
-/system logging
-add disabled=yes prefix=192.168.20.50 topics=info
 /system ntp client
 set enabled=yes
