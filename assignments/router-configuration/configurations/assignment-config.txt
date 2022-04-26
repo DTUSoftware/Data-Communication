@@ -69,5 +69,3 @@ set name=Group20
 add disabled=yes prefix=192.168.20.50 topics=info
 /system ntp client
 set enabled=yes
-/tool traffic-monitor
-add interface=ether2 name=tmon1 trigger=always
