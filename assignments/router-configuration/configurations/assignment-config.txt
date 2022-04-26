@@ -45,10 +45,8 @@ add address=192.168.20.0/24 dns-server=192.168.20.1 gateway=192.168.20.1
 set allow-remote-requests=yes servers=1.1.1.1,8.8.8.8
 /ip firewall filter
 add chain=forward comment="Allow SSH" dst-port=22 protocol=tcp
-add chain=forward comment="Allow HTTPS" dst-port=443 protocol=tcp
-add chain=forward protocol=tcp src-port=443
-add chain=forward comment="Allow HTTP" dst-port=80 protocol=tcp
-add chain=forward protocol=tcp src-port=80
+add chain=forward comment="Allow HTTPS" port=443 protocol=tcp
+add chain=forward comment="Allow HTTP" port=80 protocol=tcp
 add chain=forward comment="Allow DNS" dst-port=53 protocol=udp
 add chain=forward comment="Allow NTP" dst-port=123 protocol=udp
 add chain=forward comment="Allow DHCP" dst-port=67 protocol=udp
