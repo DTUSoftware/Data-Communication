@@ -1,31 +1,32 @@
-# apr/19/2022 15:35:49 by RouterOS 6.18
+# apr/26/2022 15:30:13 by RouterOS 6.18
 # software id = PLBF-NQ9T
 #
 /interface bridge
 add comment="Bridge between Gigabit and Fast switch" l2mtu=1598 name=bridge1
 /interface ethernet
 set [ find default-name=ether1 ] comment=WAN
-set [ find default-name=ether2 ] comment=\
-    "GIGABIT LAN MASTER PORT - Ports 2-5 are switched"
+set [ find default-name=ether2 ] comment="GIGABIT LAN MASTER PORT - Ports 2-5 and sfp1 are switched"
 set [ find default-name=ether3 ] master-port=ether2
 set [ find default-name=ether4 ] master-port=ether2
 set [ find default-name=ether5 ] master-port=ether2
-set [ find default-name=ether6 ] comment=\
-    "FAST LAN MASTER PORT - Ports 7-10 are switched"
+set [ find default-name=ether6 ] comment="FAST LAN MASTER PORT - Ports 7-10 are switched"
 set [ find default-name=ether7 ] master-port=ether6
 set [ find default-name=ether8 ] master-port=ether6
 set [ find default-name=ether9 ] master-port=ether6
 set [ find default-name=ether10 ] master-port=ether6
-set [ find default-name=sfp1 ] master-port=ether2
+set [ find default-name=sfp1 ] comment="Slave to ether2 (part of GIGABIT LAN)" master-port=ether2
 /ip neighbor discovery
 set ether1 comment=WAN
-set ether2 comment="GIGABIT LAN MASTER PORT - Ports 2-5 are switched"
+set ether2 comment="GIGABIT LAN MASTER PORT - Ports 2-5 and sfp1 are switched"
 set ether6 comment="FAST LAN MASTER PORT - Ports 7-10 are switched"
+set sfp1 comment="Slave to ether2 (part of GIGABIT LAN)"
 set bridge1 comment="Bridge between Gigabit and Fast switch"
+/interface wireless security-profiles
+set [ find default=yes ] supplicant-identity=MikroTik
 /ip pool
-add name=pool1 ranges=192.168.20.10-192.168.20.50
+add name=dhcp ranges=192.168.20.10-192.168.20.50
 /ip dhcp-server
-add address-pool=pool1 disabled=no interface=bridge1 name=server1
+add address-pool=dhcp disabled=no interface=bridge1 name=server1
 /port
 set 0 name=serial0
 /interface bridge port
@@ -36,30 +37,26 @@ add address=192.168.20.1/24 interface=ether2 network=192.168.20.0
 /ip dhcp-client
 add dhcp-options=clientid,hostname disabled=no interface=ether1
 /ip dhcp-server lease
-add address=192.168.20.5 comment="Port 5 Static" mac-address=98:28:A6:06:29:B4 \
-    server=server1
-add address=192.168.20.4 client-id=1:0:e0:4c:68:a:f comment="Port 4 Static" \
-    mac-address=00:E0:4C:68:0A:0F server=server1
+add address=192.168.20.5 comment="Port 5 Static" mac-address=98:28:A6:06:29:B4 server=server1
+add address=192.168.20.4 comment="Port 4 Static" mac-address=00:E0:4C:68:00:9D server=server1
 /ip dhcp-server network
 add address=192.168.20.0/24 dns-server=192.168.20.1 gateway=192.168.20.1
 /ip dns
 set allow-remote-requests=yes servers=1.1.1.1,8.8.8.8
 /ip firewall filter
 add chain=forward comment="Allow SSH" dst-port=22 protocol=tcp
-add chain=forward comment="Allow HTTPS" dst-port=443 protocol=tcp
-add chain=forward protocol=tcp src-port=443
-add chain=forward comment="Allow HTTP" dst-port=80 protocol=tcp
-add chain=forward protocol=tcp src-port=80
+add chain=forward comment="Allow HTTPS" port=443 protocol=tcp
+add chain=forward comment="Allow HTTP" port=80 protocol=tcp
 add chain=forward comment="Allow DNS" dst-port=53 protocol=udp
 add chain=forward comment="Allow NTP" dst-port=123 protocol=udp
 add chain=forward comment="Allow DHCP" dst-port=67 protocol=udp
 add chain=forward comment="Allow pinging" protocol=icmp
-add action=reject chain=forward comment="Deny everything else" reject-with=\
-    icmp-port-unreachable
+add action=reject chain=forward comment="Deny everything else" reject-with=icmp-port-unreachable
 /ip firewall nat
 add action=masquerade chain=srcnat out-interface=ether1
-add action=dst-nat chain=dstnat dst-port=80 in-interface=ether1 protocol=tcp \
-    to-addresses=192.168.20.4 to-ports=80
+add action=dst-nat chain=dstnat comment="NAT-forwarding for Webserver (port 4)" dst-port=80 in-interface=ether1 protocol=tcp to-addresses=192.168.20.4 \
+    to-ports=80
+add action=dst-nat chain=dstnat dst-port=443 in-interface=ether1 protocol=tcp to-addresses=192.168.20.4 to-ports=443
 /ip upnp
 set allow-disable-external-interface=no
 /system clock
@@ -70,5 +67,3 @@ set name=Group20
 add disabled=yes prefix=192.168.20.50 topics=info
 /system ntp client
 set enabled=yes
-/tool traffic-monitor
-add interface=ether2 name=tmon1 trigger=always
