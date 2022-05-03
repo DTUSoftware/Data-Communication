@@ -66,6 +66,7 @@ class Connection:
             return
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(ADDRESS, PORT)
         self.sock.connect((ADDRESS, PORT))
 
         # Check connection establishment
