@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  smtp-web:
+    container_name: smtp-web
+    hostname: smtp
+    build: ./webapp
+    env_file:
+      - smtp_variables.env
+  reverse-proxy:
+    container_name: reverse-proxy
+    hostname: reverse-proxy
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./reverse-proxy/nginx:/etc/nginx
+      - ./reverse-proxy/ssl:/etc/ssl
+    depends_on:
+      - "smtp-web"

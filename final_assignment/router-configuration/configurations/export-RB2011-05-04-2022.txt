@@ -1,0 +1,46 @@
+# apr/05/2022 16:34:23 by RouterOS 6.18
+# software id = PLBF-NQ9T
+#
+/interface bridge
+add comment="Bridge between Gigabit and Fast switch" l2mtu=1598 name=bridge1
+/interface ethernet
+set [ find default-name=ether1 ] comment=WAN
+set [ find default-name=ether2 ] comment="GIGABIT LAN MASTER PORT - Ports 2-5 are switched"
+set [ find default-name=ether3 ] master-port=ether2
+set [ find default-name=ether4 ] master-port=ether2
+set [ find default-name=ether5 ] master-port=ether2
+set [ find default-name=ether6 ] comment="FAST LAN MASTER PORT - Ports 7-10 are switched"
+set [ find default-name=ether7 ] master-port=ether6
+set [ find default-name=ether8 ] master-port=ether6
+set [ find default-name=ether9 ] master-port=ether6
+set [ find default-name=ether10 ] master-port=ether6
+/ip neighbor discovery
+set ether1 comment=WAN
+set ether2 comment="GIGABIT LAN MASTER PORT - Ports 2-5 are switched"
+set ether6 comment="FAST LAN MASTER PORT - Ports 7-10 are switched"
+set bridge1 comment="Bridge between Gigabit and Fast switch"
+/ip pool
+add name=pool1 ranges=192.168.20.10-192.168.20.50
+/ip dhcp-server
+add address-pool=pool1 disabled=no interface=bridge1 name=server1
+/port
+set 0 name=serial0
+/interface bridge port
+add bridge=bridge1 interface=ether2
+add bridge=bridge1 interface=ether6
+/ip address
+add address=192.168.20.1/24 interface=ether2 network=192.168.20.0
+/ip dhcp-client
+add dhcp-options=clientid,hostname disabled=no interface=ether1
+/ip dhcp-server network
+add address=192.168.20.0/24 dns-server=192.168.20.1 gateway=192.168.20.1
+/ip dns
+set allow-remote-requests=yes servers=1.1.1.1,8.8.8.8
+/ip firewall nat
+add action=masquerade chain=srcnat out-interface=ether1
+/ip upnp
+set allow-disable-external-interface=no
+/system clock
+set time-zone-name=Europe/Copenhagen
+/system ntp client
+set enabled=yes

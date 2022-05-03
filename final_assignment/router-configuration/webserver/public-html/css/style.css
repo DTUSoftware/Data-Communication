@@ -1,0 +1,19 @@
+body, html {
+    height: 100vh;
+    background-color: #FF69B4;
+    user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    color: black;
+}
+
+.site-container {
+    z-index: 2;
+    position: relative;
+
+    justify-items: center;
+    /*justify-content: center;*/
+    /*align-items: center;*/
+    align-content: center;
+}
