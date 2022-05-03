@@ -4,11 +4,11 @@
 
 Our group members did not change during the duration of the course.
 Group 20:
-- Marcus S.
-- Mads N.
-- Mads H.
-- Oscar M.
-- Nicolai U.
+- Marcus S. (s215827)
+- Mads N. (s215771)
+- Mads H. (s205455)
+- Oscar M. (s215779)
+- Nicolai U. (s215828)
 
 ## Assignments
 
